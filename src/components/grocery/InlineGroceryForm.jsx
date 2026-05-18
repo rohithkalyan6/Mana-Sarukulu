@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGroceryContext } from '../../context/GroceryContext';
 import { CATEGORIES, PREDEFINED_ITEMS, ALLOWED_UNITS } from '../../utils/helpers';
 import clsx from 'clsx';
+import { Plus, Search } from 'lucide-react';
 
 export default function InlineGroceryForm() {
   const { addGroceryItem } = useGroceryContext();
@@ -12,9 +13,23 @@ export default function InlineGroceryForm() {
     price: '',
     category: '',
   });
+  
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Quick Add Chips
-  const quickAddItems = ['rice', 'milk', 'eggs', 'tomato', 'soap'];
+  const quickAddItems = ['sona_masuri', 'milk', 'eggs', 'tomato', 'soap'];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -25,25 +40,11 @@ export default function InlineGroceryForm() {
       price: formData.price ? Number(formData.price) : 0,
       quantity: formData.quantity ? Number(formData.quantity) : 1,
       unit: formData.unit || 'pcs',
+      category: formData.category || 'others',
       purchased: false,
     });
     
     setFormData({ itemName: '', quantity: '', unit: 'pcs', price: '', category: '' });
-  };
-
-  const handleItemSelect = (e) => {
-    const selectedId = e.target.value;
-    const selectedItem = PREDEFINED_ITEMS.find(item => item.id === selectedId);
-    if (selectedItem) {
-      setFormData(prev => ({
-        ...prev,
-        itemName: selectedItem.name,
-        category: selectedItem.category,
-        unit: selectedItem.defaultUnit || 'pcs'
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, itemName: '' }));
-    }
   };
 
   const handleQuickAdd = (id) => {
@@ -61,10 +62,47 @@ export default function InlineGroceryForm() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'itemName') {
+      setIsDropdownOpen(true);
+      // Auto-detect category and unit if exactly matches a predefined item
+      const matched = PREDEFINED_ITEMS.find(item => item.name.toLowerCase() === value.toLowerCase());
+      if (matched) {
+        setFormData(prev => ({
+           ...prev, 
+           category: matched.category,
+           unit: matched.defaultUnit || 'pcs'
+        }));
+      } else {
+        setFormData(prev => ({
+           ...prev, 
+           category: 'others' // default to others for custom items
+        }));
+      }
+    }
   };
 
+  const handleSelectFromDropdown = (item) => {
+    setFormData(prev => ({
+      ...prev,
+      itemName: item.name,
+      category: item.category,
+      unit: item.defaultUnit || 'pcs'
+    }));
+    setIsDropdownOpen(false);
+  };
+
+  const filteredItems = PREDEFINED_ITEMS.filter(item => 
+    item.name.toLowerCase().includes(formData.itemName.toLowerCase())
+  );
+
+  const groupedItems = CATEGORIES.map(cat => ({
+    ...cat,
+    items: filteredItems.filter(item => item.category === cat.id)
+  })).filter(cat => cat.items.length > 0);
+
   return (
-    <div id="add-item-form" className="glass-card p-5 md:p-6 scroll-mt-24">
+    <div id="add-item-form" className="glass-card overflow-visible p-5 md:p-6 scroll-mt-24">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
         <h3 className="text-[15px] font-bold text-slate-800">Add Grocery Item</h3>
         
@@ -73,6 +111,7 @@ export default function InlineGroceryForm() {
           <span className="text-xs font-semibold text-slate-500 py-1">Quick Add:</span>
           {quickAddItems.map(id => {
             const item = PREDEFINED_ITEMS.find(i => i.id === id);
+            if (!item) return null;
             return (
               <button
                 key={id}
@@ -88,24 +127,69 @@ export default function InlineGroceryForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-stretch md:items-end gap-4 w-full">
-        <div className="flex-1 w-full">
+        <div className="flex-1 w-full relative" ref={dropdownRef}>
           <label className="label-text">Item</label>
-          <select
-            name="itemSelect"
-            value={PREDEFINED_ITEMS.find(i => i.name === formData.itemName)?.id || ''}
-            onChange={handleItemSelect}
-            className="input-field appearance-none bg-white py-3 md:py-2.5"
-            required
-          >
-            <option value="" disabled>Select Grocery Item</option>
-            {CATEGORIES.map(cat => (
-              <optgroup key={cat.id} label={cat.label}>
-                {PREDEFINED_ITEMS.filter(item => item.category === cat.id).map(item => (
-                  <option key={item.id} value={item.id}>{item.name}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              name="itemName"
+              value={formData.itemName}
+              onChange={handleChange}
+              onFocus={() => setIsDropdownOpen(true)}
+              placeholder="Search or type custom item..."
+              className="input-field py-3 md:py-2.5 w-full pl-10"
+              required
+              autoComplete="off"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          </div>
+          
+          {isDropdownOpen && (
+            <div className="absolute z-50 w-full mt-1 bg-white border border-[#E2E8F0] rounded-xl shadow-xl max-h-64 overflow-y-auto">
+              <ul className="py-2">
+                {groupedItems.length > 0 ? (
+                  groupedItems.map(category => (
+                    <div key={category.id}>
+                      <div className="px-4 py-1.5 text-xs font-bold text-slate-500 bg-slate-50 uppercase tracking-wider sticky top-0 z-10">
+                        {category.label}
+                      </div>
+                      {category.items.map(item => (
+                        <li 
+                          key={item.id}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectFromDropdown(item);
+                          }}
+                          className="px-4 py-2.5 hover:bg-slate-100 cursor-pointer text-sm text-slate-700 flex items-center gap-3 transition-colors"
+                        >
+                          <span className="text-lg">{item.icon}</span>
+                          <span className="font-medium">{item.name}</span>
+                        </li>
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  <li className="px-4 py-4 text-sm text-slate-500 text-center flex flex-col items-center gap-2">
+                    <Search className="w-5 h-5 text-slate-300" />
+                    <span>Item not found? Type manually.</span>
+                  </li>
+                )}
+                
+                {formData.itemName && !filteredItems.some(i => i.name.toLowerCase() === formData.itemName.toLowerCase()) && (
+                  <li 
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setIsDropdownOpen(false);
+                    }}
+                    className="px-4 py-3 border-t border-slate-100 bg-[#EFF6FF] hover:bg-[#DBEAFE] cursor-pointer text-sm font-semibold text-blue-700 flex items-center gap-2 transition-colors sticky bottom-0 z-20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    + Add "{formData.itemName}" as Custom Item
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 w-full md:w-auto">
