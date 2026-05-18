@@ -1,6 +1,6 @@
 import { useGroceryContext } from '../context/GroceryContext';
 import { useCurrency } from '../hooks/useCurrency';
-import { CATEGORIES } from '../utils/helpers';
+import { CATEGORIES, calculateTotalSpent } from '../utils/helpers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { BarChart2 } from 'lucide-react';
 
@@ -8,12 +8,10 @@ export default function Reports() {
   const { items } = useGroceryContext();
   const { formatCurrency } = useCurrency();
 
-  const totalSpent = items.reduce((acc, item) => acc + (item.price * (Number.isNaN(Number(item.quantity)) ? 1 : Number(item.quantity) || 1)), 0);
+  const totalSpent = calculateTotalSpent(items);
 
   const categoryData = CATEGORIES.map(cat => {
-    const amount = items
-      .filter(item => item.category === cat.id)
-      .reduce((acc, item) => acc + (item.price * (Number.isNaN(Number(item.quantity)) ? 1 : Number(item.quantity) || 1)), 0);
+    const amount = calculateTotalSpent(items.filter(item => item.category === cat.id));
     return { name: cat.label, value: amount, id: cat.id, dot: cat.dot };
   }).filter(data => data.value > 0);
 

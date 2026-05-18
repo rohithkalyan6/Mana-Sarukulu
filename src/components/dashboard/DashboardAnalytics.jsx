@@ -1,14 +1,12 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { CATEGORIES, getCategoryDot } from '../../utils/helpers';
+import { CATEGORIES, getCategoryDot, calculateTotalSpent } from '../../utils/helpers';
 import { useCurrency } from '../../hooks/useCurrency';
 
 export default function DashboardAnalytics({ currentMonthItems, totalSpent }) {
   const { formatCurrency } = useCurrency();
   
   const categoryData = CATEGORIES.map(cat => {
-    const amount = currentMonthItems
-      .filter(item => item.category === cat.id)
-      .reduce((acc, item) => acc + (item.price * (Number.isNaN(Number(item.quantity)) ? 1 : Number(item.quantity) || 1)), 0);
+    const amount = calculateTotalSpent(currentMonthItems.filter(item => item.category === cat.id));
     return { name: cat.label, value: amount, id: cat.id };
   }).filter(data => data.value > 0);
 
@@ -17,7 +15,7 @@ export default function DashboardAnalytics({ currentMonthItems, totalSpent }) {
       <h3 className="text-[15px] font-bold text-slate-800 mb-6">Top Categories (This Month)</h3>
       
       {categoryData.length > 0 ? (
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="w-32 h-32 relative flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -39,7 +37,7 @@ export default function DashboardAnalytics({ currentMonthItems, totalSpent }) {
             </ResponsiveContainer>
           </div>
           
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 w-full space-y-3">
             {categoryData.sort((a, b) => b.value - a.value).slice(0, 4).map((cat) => {
               const percentage = ((cat.value / totalSpent) * 100).toFixed(1);
               return (

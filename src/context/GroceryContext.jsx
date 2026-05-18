@@ -14,33 +14,9 @@ export function GroceryProvider({ children }) {
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
   };
 
-  const generateStarterData = () => {
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const now = new Date();
-    
-    // Create dates for 1 and 2 months ago
-    const date1 = new Date(now.getFullYear(), now.getMonth() - 1, 15);
-    const date2 = new Date(now.getFullYear(), now.getMonth() - 2, 10);
-    
-    return [
-      { id: generateId(), itemName: 'Rice (బియ్యం)', category: 'grains', price: 1250, quantity: 25, unit: 'kg', purchased: true, createdAt: date1.toISOString(), month: monthNames[date1.getMonth()], year: date1.getFullYear(), isSample: true },
-      { id: generateId(), itemName: 'Oil (నూనె)', category: 'cooking', price: 850, quantity: 5, unit: 'litre', purchased: true, createdAt: date1.toISOString(), month: monthNames[date1.getMonth()], year: date1.getFullYear(), isSample: true },
-      { id: generateId(), itemName: 'Milk (పాలు)', category: 'dairy', price: 1050, quantity: 30, unit: 'litre', purchased: true, createdAt: date1.toISOString(), month: monthNames[date1.getMonth()], year: date1.getFullYear(), isSample: true },
-      { id: generateId(), itemName: 'Wheat Flour (గోధుమ పిండి)', category: 'grains', price: 450, quantity: 10, unit: 'kg', purchased: true, createdAt: date2.toISOString(), month: monthNames[date2.getMonth()], year: date2.getFullYear(), isSample: true },
-      { id: generateId(), itemName: 'Sugar (చక్కెర)', category: 'grains', price: 220, quantity: 5, unit: 'kg', purchased: true, createdAt: date2.toISOString(), month: monthNames[date2.getMonth()], year: date2.getFullYear(), isSample: true },
-      { id: generateId(), itemName: 'Soap (సబ్బు)', category: 'personal', price: 320, quantity: 8, unit: 'pcs', purchased: true, createdAt: date2.toISOString(), month: monthNames[date2.getMonth()], year: date2.getFullYear(), isSample: true },
-    ];
-  };
-
-  const [storedItems, setItems] = useLocalStorage('grocify_items_prod', generateStarterData());
+  const [storedItems, setItems] = useLocalStorage('grocify_items_prod', []);
   
   const items = Array.isArray(storedItems) ? storedItems : [];
-
-  const loadStarterData = () => {
-    if (window.confirm("This will add sample starter data to your history. Continue?")) {
-      setItems([...generateStarterData(), ...items]);
-    }
-  };
 
   const addGroceryItem = (item) => {
     try {
@@ -110,8 +86,7 @@ export function GroceryProvider({ children }) {
       togglePurchased,
       clearAllData,
       clearCurrentMonthData,
-      resetApplication,
-      loadStarterData
+      resetApplication
     }}>
       {children}
     </GroceryContext.Provider>

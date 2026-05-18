@@ -1,6 +1,6 @@
 import { useGroceryContext } from '../context/GroceryContext';
 import { useCurrency } from '../hooks/useCurrency';
-import { CATEGORIES, getCategoryDot } from '../utils/helpers';
+import { CATEGORIES, getCategoryDot, calculateTotalSpent } from '../utils/helpers';
 import { LayoutGrid } from 'lucide-react';
 
 export default function Categories() {
@@ -8,10 +8,8 @@ export default function Categories() {
   const { formatCurrency } = useCurrency();
 
   const categoryTotals = CATEGORIES.map(cat => {
-    const total = items
-      .filter(item => item.category === cat.id)
-      .reduce((acc, item) => acc + (item.price * (Number.isNaN(Number(item.quantity)) ? 1 : Number(item.quantity) || 1)), 0);
-    const count = items.filter(item => item.category === cat.id).length;
+    const total = calculateTotalSpent(items.filter(item => item.category === cat.id));
+    const count = items.filter(item => item.category === cat.id && item.purchased).length;
     return { ...cat, total, count };
   });
 

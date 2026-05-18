@@ -93,3 +93,20 @@ export const getCategoryDot = (categoryId) => {
   const category = CATEGORIES.find(c => c.id === categoryId);
   return category ? category.dot : '#64748B';
 };
+
+export const calculateTotalSpent = (items) => {
+  if (!Array.isArray(items)) return 0;
+  
+  return items.reduce((acc, item) => {
+    if (!item || item.purchased !== true) return acc;
+    
+    const price = parseFloat(item.price);
+    if (isNaN(price) || price < 0 || !isFinite(price)) return acc;
+    
+    const qty = parseFloat(item.quantity);
+    const validQty = isNaN(qty) || qty <= 0 || !isFinite(qty) ? 1 : qty;
+    
+    return acc + (price * validQty);
+  }, 0);
+};
+

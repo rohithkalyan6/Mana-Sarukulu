@@ -2,6 +2,7 @@ import { Wallet, TrendingDown, IndianRupee } from 'lucide-react';
 import { useCurrency } from '../../hooks/useCurrency';
 import ProgressBar from './ProgressBar';
 import { useGroceryContext } from '../../context/GroceryContext';
+import { calculateTotalSpent } from '../../utils/helpers';
 
 export default function BudgetCard() {
   const { budget, items } = useGroceryContext();
@@ -11,13 +12,10 @@ export default function BudgetCard() {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   
-  const spent = items.reduce((acc, item) => {
+  const spent = calculateTotalSpent(items.filter(item => {
     const itemDate = new Date(item.createdAt);
-    if (itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear) {
-      return acc + (item.price * item.quantity);
-    }
-    return acc;
-  }, 0);
+    return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+  }));
 
   const remaining = Math.max(budget - spent, 0);
 

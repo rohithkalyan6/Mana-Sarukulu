@@ -5,11 +5,18 @@ import { format } from 'date-fns';
 export default function RecentShopping({ items }) {
   const { formatCurrency } = useCurrency();
   // Group by date for "Recent Shopping sessions" feel
-  const groupedByDate = items.reduce((acc, item) => {
+  const groupedByDate = items.filter(i => i.purchased).reduce((acc, item) => {
     const dateStr = format(new Date(item.createdAt), 'MMM d, yyyy');
     if (!acc[dateStr]) acc[dateStr] = { items: 0, total: 0 };
     acc[dateStr].items += 1;
-    acc[dateStr].total += item.price * (Number.isNaN(Number(item.quantity)) ? 1 : Number(item.quantity) || 1);
+    
+    const price = parseFloat(item.price);
+    const validPrice = (isNaN(price) || price < 0 || !isFinite(price)) ? 0 : price;
+    
+    const qty = parseFloat(item.quantity);
+    const validQty = (isNaN(qty) || qty <= 0 || !isFinite(qty)) ? 1 : qty;
+    
+    acc[dateStr].total += (validPrice * validQty);
     return acc;
   }, {});
 
@@ -42,6 +49,7 @@ export default function RecentShopping({ items }) {
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           <p className="text-slate-500 font-medium text-sm">No recent shopping sessions.</p>
+          <p className="text-slate-400 text-xs mt-1">Start purchasing items to see history.</p>
         </div>
       )}
     </div>

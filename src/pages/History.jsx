@@ -9,6 +9,8 @@ export default function History() {
 
   // Group items by month/year (e.g. "May 2026")
   const groupedData = items.reduce((acc, item) => {
+    if (!item.purchased) return acc;
+    
     const monthYear = item.month && item.year 
       ? `${item.month} ${item.year}` 
       : format(new Date(item.createdAt), 'MMMM yyyy');
@@ -16,8 +18,15 @@ export default function History() {
     if (!acc[monthYear]) {
       acc[monthYear] = { items: [], total: 0 };
     }
-    acc[monthYear].items.push(item);
-    acc[monthYear].total += (item.price * (Number.isNaN(Number(item.quantity)) ? 1 : Number(item.quantity) || 1));
+    
+    const price = parseFloat(item.price);
+    const validPrice = (isNaN(price) || price < 0 || !isFinite(price)) ? 0 : price;
+    
+    const qty = parseFloat(item.quantity);
+    const validQty = (isNaN(qty) || qty <= 0 || !isFinite(qty)) ? 1 : qty;
+
+    acc[monthYear].items.push({ ...item, computedTotal: validPrice * validQty });
+    acc[monthYear].total += (validPrice * validQty);
     return acc;
   }, {});
 
@@ -74,7 +83,7 @@ export default function History() {
                            <p className="text-xs font-semibold text-slate-500 mt-0.5">{format(parseISO(item.createdAt), 'MMM d')}</p>
                          </div>
                          <span className="font-bold text-slate-800 whitespace-nowrap bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                           {formatCurrency(item.price * (Number.isNaN(Number(item.quantity)) ? 1 : Number(item.quantity) || 1))}
+                           {formatCurrency(item.computedTotal)}
                          </span>
                        </div>
                      ))}

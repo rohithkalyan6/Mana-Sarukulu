@@ -1,5 +1,5 @@
 import { useGroceryContext } from '../context/GroceryContext';
-import { CATEGORIES } from '../utils/helpers';
+import { CATEGORIES, calculateTotalSpent } from '../utils/helpers';
 import { useCurrency } from '../hooks/useCurrency';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
@@ -17,13 +17,11 @@ export default function Analytics() {
   });
 
   // Calculate total spent
-  const totalSpent = currentMonthItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const totalSpent = calculateTotalSpent(currentMonthItems);
 
   // Group by category
   const categoryData = CATEGORIES.map(cat => {
-    const amount = currentMonthItems
-      .filter(item => item.category === cat.id)
-      .reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const amount = calculateTotalSpent(currentMonthItems.filter(item => item.category === cat.id));
     return { name: cat.label, value: amount, id: cat.id };
   }).filter(data => data.value > 0);
 

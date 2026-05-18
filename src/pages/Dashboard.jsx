@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Wallet, ShoppingCart, PieChart, ShoppingBag } from 'lucide-react';
 import { useGroceryContext } from '../context/GroceryContext';
 import { useCurrency } from '../hooks/useCurrency';
+import { calculateTotalSpent } from '../utils/helpers';
 import StatCard from '../components/dashboard/StatCard';
 import ProgressSection from '../components/dashboard/ProgressSection';
 import InlineGroceryForm from '../components/grocery/InlineGroceryForm';
@@ -35,7 +36,7 @@ export default function Dashboard() {
     return itemStr === selectedMonthYear;
   });
 
-  const spent = currentMonthItems.reduce((acc, item) => acc + (item.price * (Number.isNaN(Number(item.quantity)) ? 1 : Number(item.quantity) || 1)), 0);
+  const spent = calculateTotalSpent(currentMonthItems);
   const remaining = Math.max(budget - spent, 0);
   const purchasedCount = currentMonthItems.filter(i => i.purchased).length;
 
@@ -111,8 +112,7 @@ export default function Dashboard() {
       {/* Fourth Row: Grocery List Table */}
       <DashboardGroceryList passedItems={currentMonthItems} />
 
-      {/* Fifth Row: Split Analytics & Recent Shopping */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 h-[280px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 min-h-[280px]">
         <RecentShopping items={currentMonthItems} />
         <DashboardAnalytics currentMonthItems={currentMonthItems} totalSpent={spent} />
       </div>
